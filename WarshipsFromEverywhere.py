@@ -1,50 +1,41 @@
-# TODO: 进入先登录
-# TODO: 服务端处理数据功能完善
+import socket
+import time
 
-from threading import Thread
-from socket import socket, AF_INET, SOCK_STREAM
-from queue import Queue
+config_file = open("configs")
+config = eval("".join(config_file.readlines()))
+print(config)
+SERVER_ADDRESS = (config["IP"], config["HOST"])
 
+while True:
+    # 创建 TCP 客户端套接字
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        # 尝试连接到服务器
+        client_socket.connect(SERVER_ADDRESS)
+        print(f"Connected to server {SERVER_ADDRESS}")
+        break
+    except Exception as e:
+        print(e)
+        print("Failed to connect to the server, retry in 5 seconds...")
+        time.sleep(5)
 
-request_queue = Queue()
-configs_file = open("configs")
-configs = eval("".join(configs_file.readlines()))
-# print(configs) # examples -> 'IP': 'localhost'
+# 不断从标准输入读取用户输入并发送给服务器
+while True:
+    message = input("Enter message to send: ")
+    if not message:
+        break
+    try:
+        # 发送数据到服务器
+        client_socket.sendall(message.encode('utf-8'))
+        # 接收服务器返回的数据并打印出来
+        data = client_socket.recv(1024)
+        print(f"Received {data.decode('utf-8')}")
+    except socket.error as e:
+        print("Socket error:", e)
+        break
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+        break
 
-
-def mainThread():
-    while True:
-        request = input(">>> ")
-        request_queue.put(request)
-        request_queue.join()
-        if not request:
-            while True:
-                if request_queue.get() == "__STOP_FINISH__":
-                    request_queue.task_done()
-                    return
-
-
-def tcpConnectionThread():
-    tcp_socket = socket(AF_INET, SOCK_STREAM)
-    server_addr = (configs['IP'], configs['HOST'])
-    tcp_socket.connect(server_addr)
-    while True:
-        send_data = request_queue.get()
-        tcp_socket.send(send_data.encode('utf-8'))
-        recv_data = tcp_socket.recv(1024)
-        if not send_data:
-            request_queue.task_done()
-            break
-        print(recv_data.decode('utf-8'))
-        request_queue.task_done()
-    tcp_socket.close()
-    request_queue.put("__STOP_FINISH__")
-    request_queue.join()
-    return
-
-
-if __name__ == "__main__":
-    main = Thread(target=mainThread, name='main')
-    connection = Thread(target=tcpConnectionThread, name='connection')
-    main.start()
-    connection.start()
+# 关闭客户端套接字
+client_socket.close()
