@@ -18,6 +18,13 @@ while True:
         print(e)
         print("Failed to connect to the server, retry in 5 seconds...")
         time.sleep(5)
+# 登陆
+client_socket.sendall(input(client_socket.recv(1024).decode('utf-8')).encode('utf-8'))
+client_socket.sendall(input(client_socket.recv(1024).decode('utf-8')).encode('utf-8'))
+client_socket.sendall(input(client_socket.recv(1024).decode('utf-8')).encode('utf-8'))
+print(client_socket.recv(1024).decode('utf-8'))
+# FIXME: 被踢出后还可再发送一条消息
+#        解决方案: 直接向服务器验证可用性(1.发送一个请求;2.使用现有函数)
 
 # 不断从标准输入读取用户输入并发送给服务器
 while True:
