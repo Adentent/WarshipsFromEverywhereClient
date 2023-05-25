@@ -3,7 +3,7 @@ import time
 
 config_file = open("configs")
 config = eval("".join(config_file.readlines()))
-print(config)
+# print(config)
 SERVER_ADDRESS = (config["IP"], config["HOST"])
 
 while True:
@@ -19,24 +19,42 @@ while True:
         print("Failed to connect to the server, retry in 5 seconds...")
         time.sleep(5)
 # 登陆
-client_socket.sendall(input(client_socket.recv(1024).decode('utf-8')).encode('utf-8'))
-client_socket.sendall(input(client_socket.recv(1024).decode('utf-8')).encode('utf-8'))
-client_socket.sendall(input(client_socket.recv(1024).decode('utf-8')).encode('utf-8'))
+for i in range(3):
+    ipt = input(client_socket.recv(1024).decode('utf-8')).encode('utf-8')
+    if not ipt:
+        print("Good bye")
+        client_socket.close()
+        exit()
+    client_socket.sendall(ipt)
 print(client_socket.recv(1024).decode('utf-8'))
-# FIXME: 被踢出后还可再发送一条消息
-#        解决方案: 直接向服务器验证可用性(1.发送一个请求;2.使用现有函数)
+try:
+    client_socket.sendall(b"__KICKED__")
+    client_socket.recv(1024)
+# except Exception as e:
+except OSError:
+    # print(e)
+    client_socket.close()
+    exit()
 
 # 不断从标准输入读取用户输入并发送给服务器
 while True:
-    message = input("Enter message to send: ")
+    message = input(client_socket.recv(1024).decode('utf-8'))
     if not message:
+        print("Good bye")
         break
     try:
         # 发送数据到服务器
         client_socket.sendall(message.encode('utf-8'))
         # 接收服务器返回的数据并打印出来
         data = client_socket.recv(1024)
-        print(f"Received {data.decode('utf-8')}")
+        print(data.decode('utf-8'))
+        insider_data = client_socket.recv(1024)
+        client_socket.sendall(insider_data)
+        if insider_data == b"__KEEP_WAITING__":
+            data = client_socket.recv(1024)  # Waiting for matching
+            print(data.decode('utf-8'))
+            data = client_socket.recv(1024)  # Matching finished
+            print(data.decode('utf-8'))
     except socket.error as e:
         print("Socket error:", e)
         break
