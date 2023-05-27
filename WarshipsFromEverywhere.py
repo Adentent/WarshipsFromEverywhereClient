@@ -2,8 +2,6 @@ import socket
 import time
 import os
 
-# TODO: 给每个用户建立一个文件夹，保存其配置文件及登陆操作的密码
-
 os.chdir(os.path.split(os.path.realpath(__file__))[0])
 
 config_file = open("configs")
@@ -43,31 +41,24 @@ except OSError:
 
 # 不断从标准输入读取用户输入并发送给服务器
 while True:
-    print(1)
     message = input(client_socket.recv(1024).decode('utf-8'))
     if not message:
         print("Good bye")
         break
     try:
         # 发送数据到服务器
-        print(2)
         client_socket.sendall(message.encode('utf-8'))
-        # 接收服务器返回的数据并打印出
-        print(3)
+        # 接收服务器返回的数据并打印
         data = client_socket.recv(1024)
         print(data.decode('utf-8'))
         client_socket.sendall(b'Null')
-        print(4)
         insider_data = client_socket.recv(1024)
-        print(5)
         client_socket.sendall(insider_data)
-        print(6)
         if insider_data == b"__KEEP_WAITING__":
             data = client_socket.recv(1024)  # Waiting for matching
             print(data.decode('utf-8'))
             data = client_socket.recv(1024)  # Matching finished
             print(data.decode('utf-8'))
-            print(5)
     except socket.error as e:
         print("Socket error:", e)
         break
